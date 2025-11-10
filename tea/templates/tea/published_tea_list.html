@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お茶一覧</title>
+</head>
+<body>
+    <h1>お茶一覧</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>蒸し度</th>
+                <th>産地</th>
+                <th>名前</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tea in teas %}
+            <tr>
+                <td>{{ tea.get_steam_type_display }}</td>
+                <td>{{ tea.origin }}</td>
+                <td>{{ tea.name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

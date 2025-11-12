@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Tea Detail</title>
+  </head>
+  <body>
+    <header>
+        <h1>お茶の詳細</h1>
+    </header>
+    <main>
+      <article>
+        <h2>{{ tea.name }}</h2>
+        <img src="{{ tea.image.url }}" alt="{{ tea.name }}">
+        <p>蒸し度: {{ tea.get_steam_type_display }}</p>
+        <p>カフェインレス: {% if tea.caffeine_free %}✅カフェインレス{% else %}いいえ{% endif %}</p>
+        <p>産地: {{ tea.origin }}</p>
+        <p>説明: {{ tea.description }}</p>
+      </article>
+    </main>
+  </body>
+</html>

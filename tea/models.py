@@ -11,6 +11,10 @@ class User(AbstractUser):
     def __str__(self):
         return self.nickname or self.username
 
+    @property
+    def favorites_count(self):
+        return self.favorite_teas.count()
+
 
 class Tea(models.Model):
     """お茶マスタ"""

@@ -1,23 +1,124 @@
 {% extends 'common/base.html' %}
-
 {% block title %}お茶一覧{% endblock %}
-
 {% block content %}
 <div class="container">
-    <h1 class="mt-5">お茶一覧</h1>
-    <div class="row">
+<h1 class="mt-5">お茶一覧</h1>
+<div class="row">
         {% for tea in teas %}
-        <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
-
-                <div class="card-body">
-                    <h5 class="card-title">{{ tea.name }}</h5>
-                    <p class="card-text">{{ tea.description }}</p>
-                    <a href="{% url 'published_tea_detail' tea.id %}" class="btn btn-success">詳細を見る</a>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
+<div class="col-md-4">
+<div class="card mb-4 shadow-sm">
+<div class="card-body">
+<h5 class="card-title">{{ tea.name }}</h5>
+<p class="card-text">{{ tea.description }}</p>
+<div class="d-flex justify-content-between">
+<div><a href="{% url 'published_tea_detail' tea.id %}" class="btn btn-success">詳細を見る</a></div>
+<div>
+                            {% if user.is_authenticated %}
+                              {% if tea.is_favorited %}
+<form method="post" action="{% url 'cancel_favorite_tea' tea.id %}" class="favorite-form" data-tea-id="{{ tea.id }}">
+{% csrf_token %}
+<button type="submit" class="btn btn-danger favorite-button">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
+<path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
+</svg>
+                                お気に入り済み
+</button>
+</form>
+                              {% else %}
+<form method="post" action="{% url 'add_favorite_tea' tea.id %}" class="favorite-form" data-tea-id="{{ tea.id }}">
+{% csrf_token %}
+<button type="submit" class="btn btn-outline-danger favorite-button">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
+<path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
+</svg>
+                                お気に入りに追加
+</button>
+</form>
+                              {% endif %}
+                            {% endif %}
+<div>
+<span class="like-count" data-tea-id="{{ tea.id }}">{{ tea.favorites_count }}</span> favorites
 </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+        {% endfor %}
+</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.favorite-form');
+    
+    // CSRFトークンを取得する関数
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const teaId = form.dataset.teaId;
+            const formData = new FormData(form);
+            const url = form.action;
+            const button = form.querySelector('.favorite-button');
+            const likeCount = document.querySelector(`.like-count[data-tea-id="${teaId}"]`);
+            
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // いいね数を更新
+                    likeCount.textContent = data.favorites_count;
+                    
+                    // ボタンの表示を切り替え
+                    if (data.is_favorited) {
+                        button.className = 'btn btn-danger favorite-button';
+                        button.innerHTML = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
+<path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
+</svg>
+                        お気に入り済み`;
+                        form.action = data.cancel_url;
+                    } else {
+                        button.className = 'btn btn-outline-danger favorite-button';
+                        button.innerHTML = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
+<path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
+</svg>
+                        お気に入りに追加`;
+                        form.action = data.add_url;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

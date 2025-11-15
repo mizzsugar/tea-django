@@ -9,4 +9,6 @@ urlpatterns = [
     path('signin/', views.signin_view, name='signin'),
     path('signout/', views.signout_view, name='signout'),
     path('home/', views.home_view, name='home'),
+    path("teas/<int:tea_id>/favorite/", views.add_favorite_tea, name="add_favorite_tea"),
+    path("teas/<int:tea_id>/cancel_favorite/", views.cancel_favorite_tea, name="cancel_favorite_tea"),
 ]

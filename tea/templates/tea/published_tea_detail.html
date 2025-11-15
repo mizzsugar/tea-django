@@ -1,46 +1,112 @@
 {% extends 'common/base.html' %}
-
 {% block title %}{{tea.name}} 詳細{% endblock %}
-
 {% block content %}
 <div class="container">
-  <h1>{{ tea.name }}</h1>
-
-  <p>{{ tea.description }}</p>
-  <div class="row">
-    <div class="col-md-6">
-      <h2>詳細情報</h2>
-      <ul class="list-group">
-        <li class="list-group-item">蒸し度: {{ tea.get_steam_type_display }}</li>
-        <li class="list-group-item">産地: {{ tea.origin }}</li>
-        <li class="list-group-item">カフェインレス: {{ tea.caffeine_free }}</li>
-      </ul>
-    </div>
-  </div>
-  
-  <div class="mt-4">
-    <div clas="row">
+<h1>{{ tea.name }}</h1>
+<p>{{ tea.description }}</p>
+<div class="row">
+<div class="col-md-6">
+<h2>詳細情報</h2>
+<ul class="list-group">
+<li class="list-group-item">蒸し度: {{ tea.get_steam_type_display }}</li>
+<li class="list-group-item">産地: {{ tea.origin }}</li>
+<li class="list-group-item">カフェインレス: {{ tea.caffeine_free }}</li>
+</ul>
+</div>
+</div>
+<div class="mt-4">
+<div class="row">
       {% if user.is_authenticated %}
-        {% if tea.is_favorited_by_user %}
-        <button type="button" class="btn btn-danger">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
-          <path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
-          </svg>
+        {% if tea.is_favorited %}
+<form method="post" action="{% url 'cancel_favorite_tea' tea.id %}" class="favorite-form" data-tea-id="{{ tea.id }}">
+{% csrf_token %}
+<button type="submit" class="btn btn-danger favorite-button">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
+<path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
+</svg>
           お気に入り済み
-        </button>
+</button>
+</form>
         {% else %}
-        <button type="button" class="btn btn-outline-danger">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
-          <path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
-          </svg>
+<form method="post" action="{% url 'add_favorite_tea' tea.id %}" class="favorite-form" data-tea-id="{{ tea.id }}">
+{% csrf_token %}
+<button type="submit" class="btn btn-outline-danger favorite-button">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
+<path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
+</svg>
           お気に入りに追加
-        </button>
+</button>
+</form>
         {% endif %}
       {% endif %}
-      <div>
-        <span id="like-count">{{ tea.favorites_count }}</span> favorites
-      </div>
-    </div>
-  </div>
+<div>
+<span class="like-count" data-tea-id="{{ tea.id }}">{{ tea.favorites_count }}</span> favorites
 </div>
+</div>
+</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.favorite-form');
+    
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const teaId = form.dataset.teaId;
+            
+            const formData = new FormData(form);
+            const url = form.action;
+            
+            const button = form.querySelector('.favorite-button');
+            const likeCount = document.querySelector(`.like-count[data-tea-id="${teaId}"]`);
+            
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                return response.json();
+            })
+            .then(data => {
+                
+                if (data.success) {
+                    // いいね数を更新
+                    likeCount.textContent = data.favorites_count;
+                    
+                    // ボタンの表示を切り替え
+                    if (data.is_favorited) {
+                        button.className = 'btn btn-danger favorite-button';
+                        button.innerHTML = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
+<path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
+</svg>
+                        お気に入り済み`;
+                        form.action = data.cancel_url;
+                        console.log('Changed to favorited');
+                    } else {
+                        button.className = 'btn btn-outline-danger favorite-button';
+                        button.innerHTML = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
+<path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
+</svg>
+                        お気に入りに追加`;
+                        form.action = data.add_url;
+                        console.log('Changed to not favorited');
+                    }
+                } else {
+                    console.error('Success flag is false');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -4,6 +4,8 @@ from django.db.models import Count, Exists, OuterRef
 from tea.models import Tea, FavoriteTea
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.urls import reverse
 from django.contrib import messages
 from django.db.models import Count, Exists, OuterRef, Value, BooleanField
 from tea.forms import SignUpForm, SignInForm
@@ -103,3 +105,50 @@ def published_tea_detail(request, tea_id: int):
     tea = get_object_or_404(queryset)
 
     return render(request, 'tea/published_tea_detail.html', {'tea': tea})
+
+
+
+@login_required
+def add_favorite_tea(request, tea_id):
+    """お気に入りに追加"""
+    if request.method == 'POST':
+        tea = get_object_or_404(Tea, pk=tea_id)
+        
+        # お気に入りを追加（既に存在する場合は何もしない）
+        FavoriteTea.objects.get_or_create(user=request.user, tea=tea)
+        
+        # 更新後のいいね数を取得
+        favorites_count = tea.favorited_by.count()
+        
+        return JsonResponse({
+            'success': True,
+            'is_favorited': True,
+            'favorites_count': favorites_count,
+            'add_url': reverse('add_favorite_tea', args=[tea_id]),
+            'cancel_url': reverse('cancel_favorite_tea', args=[tea_id])
+        })
+    
+    return JsonResponse({'success': False}, status=400)
+
+
+@login_required
+def cancel_favorite_tea(request, tea_id):
+    """お気に入りを解除"""
+    if request.method == 'POST':
+        tea = get_object_or_404(Tea, pk=tea_id)
+        
+        # お気に入りを削除
+        FavoriteTea.objects.filter(user=request.user, tea=tea).delete()
+        
+        # 更新後のいいね数を取得
+        favorites_count = tea.favorited_by.count()
+        
+        return JsonResponse({
+            'success': True,
+            'is_favorited': False,
+            'favorites_count': favorites_count,
+            'add_url': reverse('add_favorite_tea', args=[tea_id]),
+            'cancel_url': reverse('cancel_favorite_tea', args=[tea_id])
+        })
+    
+    return JsonResponse({'success': False}, status=400)

@@ -8,54 +8,56 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.contrib import messages
 from django.db.models import Count, Exists, OuterRef, Value, BooleanField
-from tea.forms import SignUpForm, SignInForm, ReviewForm
+from tea.forms import GeneralUserRegistrationForm, EmailAuthenticationForm, ReviewForm
 
 
-def signup_view(request):
-    """会員登録ビュー - 完全フラット"""
-    # フォームを作成（POSTデータがあれば使用）
-    form = SignUpForm(request.POST or None)
+def signup(request):
+    """一般ユーザー登録"""
+    if request.method == 'POST':
+        form = GeneralUserRegistrationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '登録が完了しました。ログインしてください。')
+            return redirect('signin')
+    else:
+        form = GeneralUserRegistrationForm()
     
-    # バリデーション成功時のみ保存処理
-    if form.is_valid():
-        user = form.save()
-        login(request, user)
-        messages.success(request, '会員登録が完了しました。')
-        return redirect('home')
-    
-    # GET時やバリデーション失敗時はフォームを表示
     return render(request, 'accounts/signup.html', {'form': form})
 
 
-def signin_view(request):
-    """サインインビュー - 完全フラット"""
-    form = SignInForm(request.POST or None)
-    
-    # バリデーション成功時のみ認証処理
-    if form.is_valid():
-        user = authenticate(
-            request,
-            username=form.cleaned_data['username'],
-            password=form.cleaned_data['password']
-        )
-        
-        if user:
-            login(request, user)
-            messages.success(request, 'ログインしました。')
-            return redirect(request.GET.get('next', 'home'))
-        
-        messages.error(request, 'ユーザー名またはパスワードが正しくありません。')
+def signin(request):
+    """メールアドレスでログイン"""
+    if request.method == 'POST':
+        form = EmailAuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get('username')  # usernameフィールドにemailが入る
+            password = form.cleaned_data.get('password')
+            user = authenticate(request, username=email, password=password)
+            
+            if user is not None:
+                login(request, user)
+                messages.success(request, f'ようこそ、{user.get_display_name()}さん！')
+                
+                # next パラメータがあればそこにリダイレクト
+                next_url = request.GET.get('next') or request.POST.get('next')
+                if next_url:
+                    return redirect(next_url)
+                return redirect('/')  # ホームページなど適切なURLに変更
+            else:
+                messages.error(request, 'メールアドレスまたはパスワードが正しくありません。')
+    else:
+        form = EmailAuthenticationForm()
     
     return render(request, 'accounts/signin.html', {'form': form})
 
 
 @login_required
-def home_view(request):
+def home(request):
     """ホーム画面（ログイン必須）"""
     return render(request, 'accounts/home.html')
 
 
-def signout_view(request):
+def signout(request):
     """サインアウトビュー"""
     logout(request)
     messages.success(request, 'ログアウトしました。')

@@ -10,11 +10,11 @@
             {% csrf_token %}
             
             <div class="mb-3">
-                <label for="{{ form.username.id_for_label }}" class="form-label">ユーザー名</label>
-                {{ form.username }}
-                {% if form.username.errors %}
+                <label for="{{ form.nickname.id_for_label }}" class="form-label">ユーザー名</label>
+                {{ form.nickname }}
+                {% if form.nickname.errors %}
                     <div class="text-danger small mt-1">
-                        {{ form.username.errors }}
+                        {{ form.nickname.errors }}
                     </div>
                 {% endif %}
             </div>

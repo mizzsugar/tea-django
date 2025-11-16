@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.core.exceptions import ValidationError
 from .models import TeaReview
 
@@ -9,8 +9,9 @@ from .models import TeaReview
 User = get_user_model()
 
 
-class SignUpForm(UserCreationForm):
-    """会員登録用フォーム"""
+class GeneralUserRegistrationForm(UserCreationForm):
+    """一般ユーザー登録フォーム（usernameなし）"""
+    
     email = forms.EmailField(
         required=True,
         widget=forms.EmailInput(attrs={
@@ -18,54 +19,69 @@ class SignUpForm(UserCreationForm):
             'placeholder': 'メールアドレス'
         })
     )
-    username = forms.CharField(
-        max_length=150,
+    
+    nickname = forms.CharField(
+        max_length=30,
+        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'ユーザー名'
+            'placeholder': 'ニックネーム'
         })
     )
+    
     password1 = forms.CharField(
-        label='パスワード',
+        label="パスワード",
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'パスワード'
         })
     )
+    
     password2 = forms.CharField(
-        label='パスワード（確認）',
+        label="パスワード（確認）",
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'パスワード（確認）'
         })
     )
-
+    
     class Meta:
-        model = User  # get_user_model()で取得したモデルを使用
-        fields = ('username', 'email', 'password1', 'password2')
+        model = User
+        fields = ['email', 'nickname', 'password1', 'password2']
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.nickname = self.cleaned_data['nickname']
+        # 一般ユーザーなのでusernameは自動生成される
+        user.is_staff = False
+        user.is_superuser = False
+        
+        if commit:
+            user.save()
+        return user
 
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exists():
-            raise ValidationError('このメールアドレスは既に登録されています。')
-        return email
 
-
-class SignInForm(forms.Form):
-    """サインイン用フォーム"""
-    username = forms.CharField(
-        max_length=150,
-        widget=forms.TextInput(attrs={
+class EmailAuthenticationForm(AuthenticationForm):
+    """メールアドレスでログインするフォーム"""
+    
+    username = forms.EmailField(
+        label="メールアドレス",
+        widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'ユーザー名'
+            'placeholder': 'メールアドレス',
+            'autofocus': True
         })
     )
+    
     password = forms.CharField(
+        label="パスワード",
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'パスワード'
         })
     )
+
 
 class ReviewForm(forms.ModelForm):
     """レビューフォーム"""

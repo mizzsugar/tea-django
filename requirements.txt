@@ -1,6 +1,6 @@
 Django>=5.2
 gunicorn>=23.0
-psycopg>=3.2
+psycopg[binary]>=3.2
 whitenoise>=6.11
 dj-database-url>=3.0
 dotenv>=0.9

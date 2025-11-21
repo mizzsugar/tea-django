@@ -4,3 +4,4 @@ psycopg[binary]>=3.2
 whitenoise>=6.11
 dj-database-url>=3.0
 dotenv>=0.9
+django-admin-charts>=1.5

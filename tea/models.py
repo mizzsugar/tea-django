@@ -1,5 +1,8 @@
+import uuid
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
 
 
 class UserManager(BaseUserManager):
@@ -10,12 +13,9 @@ class UserManager(BaseUserManager):
         base_username = email.split('@')[0]
         username = base_username
         counter = 1
-        
-        # 重複しないusernameを探す
         while self.model.objects.filter(username=username).exists():
             username = f"{base_username}{counter}"
             counter += 1
-        
         return username
     
     def create_user(self, email, password=None, **extra_fields):
@@ -24,6 +24,11 @@ class UserManager(BaseUserManager):
             raise ValueError('メールアドレスは必須です')
         
         email = self.normalize_email(email)
+        
+        # デフォルトでは未確認・非アクティブ
+        extra_fields.setdefault('is_email_verified', False)
+        extra_fields.setdefault('is_active', False)
+        
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -33,13 +38,14 @@ class UserManager(BaseUserManager):
         """スーパーユーザーを作成"""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_email_verified', True)  # 確認済み
+        extra_fields.setdefault('is_active', True)  # アクティブ
         
         if extra_fields.get('is_staff') is not True:
             raise ValueError('スーパーユーザーはis_staff=Trueである必要があります')
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('スーパーユーザーはis_superuser=Trueである必要があります')
         
-        # スーパーユーザーにはusernameを設定（重複しないように）
         if 'username' not in extra_fields or not extra_fields['username']:
             extra_fields['username'] = self._generate_unique_username(email)
         
@@ -50,7 +56,6 @@ class User(AbstractUser):
     """カスタムユーザーモデル"""
     objects = UserManager()
     
-    # usernameをオプショナルにする（一般ユーザーは不要）
     username = models.CharField(
         max_length=150,
         unique=True,
@@ -59,51 +64,62 @@ class User(AbstractUser):
         verbose_name="ユーザー名(管理者用)",
         help_text="管理者用のユーザー名"
     )
-
     email = models.EmailField(
         unique=True,
         verbose_name="メールアドレス"
     )
-    
     nickname = models.CharField(
         max_length=30,
         blank=True,
         verbose_name="ユーザー名(一般ユーザー用)",
         help_text="一般ユーザー用のユーザー名"
     )
-
+    
+    # メール確認用フィールド
+    is_email_verified = models.BooleanField(
+        default=False,
+        verbose_name="メール確認済み",
+        help_text="メールアドレスが確認されているかどうか"
+    )
+    email_verification_token = models.UUIDField(
+        null=True,
+        blank=True,
+        # default=uuid.uuid4,
+        # editable=False,
+        unique=True,
+        verbose_name="メール確認トークン"
+    )
+    email_verification_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="確認メール送信日時"
+    )
+    
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
     class Meta:
         verbose_name = "ユーザー"
         verbose_name_plural = "ユーザー"
-    
+
     def __str__(self):
         return self.nickname or self.username or self.email
-    
+
     def _generate_unique_username_from_email(self):
         """emailからユニークなusernameを生成"""
         base_username = self.email.split('@')[0]
         username = base_username
         counter = 1
-        
-        # 自分自身は除外して重複チェック
         while User.objects.filter(username=username).exclude(pk=self.pk).exists():
             username = f"{base_username}{counter}"
             counter += 1
-        
         return username
-    
+
     def save(self, *args, **kwargs):
-        # スーパーユーザーまたはスタッフの場合、usernameが必須
-        # 一般ユーザーの場合、usernameはNulになる。
         if (self.is_superuser or self.is_staff) and not self.username:
             self.username = self._generate_unique_username_from_email()
-        
-
         super().save(*args, **kwargs)
-    
+
     def get_display_name(self):
         """表示用の名前を取得"""
         return self.nickname or self.email.split('@')[0]
@@ -111,6 +127,13 @@ class User(AbstractUser):
     @property
     def favorites_count(self):
         return self.favorite_teas.count()
+    
+    def is_verification_token_valid(self):
+        """確認トークンが有効かチェック(24時間以内)"""
+        if not self.email_verification_sent_at:
+            return True
+        expiry_time = self.email_verification_sent_at + timedelta(hours=24)
+        return timezone.now() < expiry_time
 
 
 class Tea(models.Model):

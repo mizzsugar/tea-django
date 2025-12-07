@@ -90,7 +90,7 @@ def unpublished_tea(db):
         origin="静岡",
         description="まだ公開していません",
         caffeine_free=False,
-        published_at=datetime.datetime(2024, 4, 1, 10, 0, tzinfo=datetime.timezon.utc),
+        published_at=datetime.datetime(2024, 4, 1, 10, 0, tzinfo=datetime.timezone.utc),
     )
 
 

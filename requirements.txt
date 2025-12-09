@@ -6,7 +6,6 @@ dj-database-url>=3.0
 dotenv>=0.9
 django-admin-charts>=1.5
 django-anymail>=13.1
-sendgrid>=6.12
 django-storages>=1.14
 boto3>=1.41
 pillow>=12.0

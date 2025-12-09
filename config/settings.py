@@ -216,11 +216,12 @@ MESSAGE_TAGS = {
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
-    EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
+    EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
     DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
     ANYMAIL = {
-        "SENDGRID_API_KEY": os.environ.get('SENDGRID_API_KEY'),
+        "RESEND_API_KEY": os.environ.get('RESEND_API_KEY'),
     }
+    TEST_TO_EMAIL=os.environ.get('TEST_TO_EMAIL')
 
 
 # Stripe設定

@@ -32,11 +32,11 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'your-default-secret-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS', '*')
+ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',')]
 
 # CSRF_TRUSTED_ORIGINS
-CSRF_TRUSTED_ORIGINS_ENV = os.getenv('CSRF_TRUSTED_ORIGINS', '*')
+CSRF_TRUSTED_ORIGINS_ENV = os.getenv('CSRF_TRUSTED_ORIGINS')
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(',')]
 
 
@@ -105,7 +105,7 @@ DATABASES = {
 
 if not DEBUG:
     DATABASES['default'] = dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
+        default=os.environ.get('DATABASE_URL', "postgres://postgres:postgres@localhost:5432/test_db"),
         conn_max_age=600,
         conn_health_checks=True,
     )
@@ -218,7 +218,6 @@ else:
     ANYMAIL = {
         "RESEND_API_KEY": os.environ.get('RESEND_API_KEY'),
     }
-    TEST_TO_EMAIL=os.environ.get('TEST_TO_EMAIL')
 
 
 # Stripe設定

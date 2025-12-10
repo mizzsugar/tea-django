@@ -32,10 +32,25 @@
                             <p class="mb-0 fw-bold">¥{{ item.product.price|floatformat:0 }}</p>
                         </div>
                         <div class="col-md-2">
-                            <form method="post" action="{% url 'shop:update_cart_item' item.id %}">
+                            <form method="post" action="{% url 'shop:update_cart_item' item.id %}" id="form-{{ item.id }}">
                                 {% csrf_token %}
-                                <div class="input-group input-group-sm">
-                                    <input type="number" name="quantity" class="form-control" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}">
+                                <input type="hidden" name="quantity" id="quantity-{{ item.id }}" value="{{ item.quantity }}">
+                                <div class="d-flex align-items-center justify-content-center" style="gap: 0.5rem;">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" 
+                                            style="width: 32px; height: 32px; padding: 0;"
+                                            onclick="updateQuantity({{ item.id }}, -1, {{ item.product.stock }})"
+                                            id="btn-minus-{{ item.id }}"
+                                            {% if item.quantity <= 1 %}disabled{% endif %}>
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    <span class="fw-bold" style="min-width: 30px; text-align: center;" id="display-{{ item.id }}">{{ item.quantity }}</span>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" 
+                                            style="width: 32px; height: 32px; padding: 0;"
+                                            onclick="updateQuantity({{ item.id }}, 1, {{ item.product.stock }})"
+                                            id="btn-plus-{{ item.id }}"
+                                            {% if item.quantity >= item.product.stock %}disabled{% endif %}>
+                                        <i class="bi bi-plus"></i>
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -111,4 +126,35 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+function updateQuantity(itemId, change, maxStock) {
+    const quantityInput = document.getElementById(`quantity-${itemId}`);
+    const displayElement = document.getElementById(`display-${itemId}`);
+    const btnMinus = document.getElementById(`btn-minus-${itemId}`);
+    const btnPlus = document.getElementById(`btn-plus-${itemId}`);
+    
+    let currentQuantity = parseInt(quantityInput.value);
+    let newQuantity = currentQuantity + change;
+    
+    // 数量の範囲チェック（min_value=1に対応）
+    if (newQuantity < 1) {
+        newQuantity = 1;
+    }
+    if (newQuantity > maxStock) {
+        newQuantity = maxStock;
+    }
+    
+    // 値を更新
+    quantityInput.value = newQuantity;
+    displayElement.textContent = newQuantity;
+    
+    // ボタンの有効/無効を制御
+    btnMinus.disabled = (newQuantity <= 1);
+    btnPlus.disabled = (newQuantity >= maxStock);
+    
+    // フォームを送信（cart/update/<int:item_id>/へPOST）
+    document.getElementById(`form-${itemId}`).submit();
+}
+</script>
 {% endblock %}

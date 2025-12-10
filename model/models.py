@@ -160,6 +160,8 @@ class Tea(models.Model):
         return self.name
 
     class Meta:
+        verbose_name = "お茶"
+        verbose_name_plural = "お茶一覧"
         db_table = "teas"
 
 

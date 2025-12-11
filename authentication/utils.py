@@ -21,7 +21,7 @@ def send_verification_email(user, base_url: str):
 
     # 確認URL生成
     base_url = base_url.rstrip("/")
-    verification_url = f"{base_url}/verify-email/{user.email_verification_token}/"
+    verification_url = f"{base_url}/auth/verify-email/{user.email_verification_token}/"
 
     # メール本文
     subject = "メールアドレスの確認"

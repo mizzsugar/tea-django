@@ -3,6 +3,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
+from django.db.models import Sum
 from django.utils import timezone
 from faker import Faker
 
@@ -37,16 +38,36 @@ class Command(BaseCommand):
         self.stdout.write("商品作成中...")
         products = self._create_products(teas)
 
+        # お茶を3つのグループに分ける
+        # グループ1: お気に入り多い・購入少ない (14種 = 70%)
+        # グループ2: お気に入り少ない・購入多い (3種 = 15%)
+        # グループ3: バランス型 (3種 = 15%)
+        high_fav_low_purchase = teas[:14]
+        low_fav_high_purchase = teas[14:17]
+        balanced = teas[17:]
+
         self.stdout.write("お気に入り作成中...")
-        self._create_favorites(users, teas)
+        self._create_favorites_strategic(
+            users, high_fav_low_purchase, low_fav_high_purchase, balanced
+        )
 
         self.stdout.write("レビュー作成中...")
         self._create_reviews(100, users, teas, fake)
 
         self.stdout.write("注文作成中...")
-        self._create_orders(300, 600, users, products, fake)
+        self._create_orders_strategic(
+            300,
+            600,
+            users,
+            products,
+            high_fav_low_purchase,
+            low_fav_high_purchase,
+            balanced,
+            fake,
+        )
 
         self.stdout.write(self.style.SUCCESS("✓ デモデータの作成が完了しました！"))
+        self._print_statistics(teas, products)
 
     def _create_tax_and_shipping(self):
         """税率と送料を設定"""
@@ -185,19 +206,37 @@ class Command(BaseCommand):
                 products.append(product)
         return products
 
-    def _create_favorites(self, users, teas):
-        """お気に入りを作成"""
+    def _create_favorites_strategic(
+        self, users, high_fav_teas, low_fav_teas, balanced_teas
+    ):
+        """戦略的にお気に入りを作成"""
 
         created = 0
-        # 各ユーザーが0〜8個のお気に入りを持つ
+
         for user in users:
-            # ランダムに0〜8個のお茶をお気に入り登録
-            num_favorites = random.randint(0, 8)
-            if num_favorites > 0:
-                favorite_teas = random.sample(teas, min(num_favorites, len(teas)))
-                for tea in favorite_teas:
-                    FavoriteTea.objects.create(user=user, tea=tea)
-                    created += 1
+            favorites = []
+
+            # グループ1（お気に入り多い）: 各ユーザーが3-7個選ぶ
+            num_high_fav = random.randint(3, 7)
+            favorites.extend(
+                random.sample(high_fav_teas, min(num_high_fav, len(high_fav_teas)))
+            )
+
+            # グループ2（お気に入り少ない）: 各ユーザーが0-1個選ぶ
+            if random.random() < 0.3:  # 30%の確率で1個
+                favorites.extend(random.sample(low_fav_teas, 1))
+
+            # グループ3（バランス型）: 各ユーザーが0-2個選ぶ
+            num_balanced = random.randint(0, 2)
+            if num_balanced > 0:
+                favorites.extend(
+                    random.sample(balanced_teas, min(num_balanced, len(balanced_teas)))
+                )
+
+            # お気に入り登録
+            for tea in favorites:
+                FavoriteTea.objects.create(user=user, tea=tea)
+                created += 1
 
         self.stdout.write(f"  {created}件のお気に入りを作成")
 
@@ -247,28 +286,40 @@ class Command(BaseCommand):
             )
             created += 1
 
-    def _create_orders(self, order_count, total_items, users, products, fake):
-        """注文を作成（月別にバラバラ）"""
+    def _create_orders_strategic(
+        self,
+        order_count,
+        total_items,
+        users,
+        products,
+        high_fav_teas,
+        low_fav_teas,
+        balanced_teas,
+        fake,
+    ):
+        """戦略的に注文を作成"""
         now = timezone.now()
 
-        # 過去12ヶ月に分散
+        # 商品をグループごとに分類
+        high_fav_products = [p for p in products if p.tea in high_fav_teas]
+        low_fav_products = [p for p in products if p.tea in low_fav_teas]
+        balanced_products = [p for p in products if p.tea in balanced_teas]
+
         for i in range(order_count):
-            # ランダムな過去の日付（0-365日前）
             days_ago = random.randint(0, 365)
             order_date = now - timedelta(days=days_ago)
 
             user = random.choice(users)
             order_number = f"ORD{order_date.strftime('%Y%m%d')}{i:04d}"
 
-            # 注文を作成
             order = Order.objects.create(
                 user=user,
                 order_number=order_number,
                 status=random.choice(["paid", "processing", "shipped", "delivered"]),
-                shipping_name=fake.name(),
-                shipping_postal_code=fake.postcode(),
-                shipping_address=fake.address(),
-                shipping_phone=fake.phone_number(),
+                shipping_name=fake.name() if hasattr(fake, "name") else f"ユーザー{i}",
+                shipping_postal_code="123-4567",
+                shipping_address=f"東京都渋谷区{i}番地",
+                shipping_phone="090-1234-5678",
                 subtotal=0,
                 tax_amount=0,
                 shipping_fee=0,
@@ -276,19 +327,41 @@ class Command(BaseCommand):
                 tax_rate=Decimal("10.00"),
             )
 
-            # 作成日時を過去に設定
             Order.objects.filter(pk=order.pk).update(
                 created_at=order_date, updated_at=order_date
             )
 
-        # 注文明細を作成
+        # 注文明細を戦略的に作成
         orders = list(Order.objects.all())
         items_per_order = total_items // order_count
 
         for order in orders:
-            # 1-5個の商品をランダムに追加
             num_items = random.randint(1, min(5, items_per_order))
-            selected_products = random.sample(products, num_items)
+            selected_products = []
+
+            # 商品選択の重み付け
+            # グループ1（お気に入り多・購入少）: 20%の確率
+            # グループ2（お気に入り少・購入多）: 60%の確率
+            # グループ3（バランス型）: 20%の確率
+
+            for _ in range(num_items):
+                rand = random.random()
+                if rand < 0.20 and high_fav_products:
+                    # お気に入り多いけど購入少ない商品
+                    product = random.choice(high_fav_products)
+                elif rand < 0.80 and low_fav_products:
+                    # お気に入り少ないけど購入多い商品
+                    product = random.choice(low_fav_products)
+                else:
+                    # バランス型
+                    product = (
+                        random.choice(balanced_products)
+                        if balanced_products
+                        else random.choice(products)
+                    )
+
+                if product not in selected_products:
+                    selected_products.append(product)
 
             for product in selected_products:
                 OrderItem.objects.create(
@@ -298,8 +371,41 @@ class Command(BaseCommand):
                     price=product.price,
                 )
 
-            # 金額を再計算
             order.calculate_amounts()
             order.save()
 
-        self.stdout.write(f"  {order_count}件の注文、約{total_items}件の注文明細を作成")
+    def _print_statistics(self, teas, products):
+        """統計情報を表示"""
+
+        self.stdout.write("\n=== 統計情報 ===")
+
+        for i, tea in enumerate(teas):
+            # お気に入り数
+            fav_count = FavoriteTea.objects.filter(tea=tea).count()
+
+            # 購入数（全商品の合計）
+            tea_products = (
+                products.filter(tea=tea)
+                if hasattr(products, "filter")
+                else [p for p in products if p.tea == tea]
+            )
+            purchase_count = sum(
+                OrderItem.objects.filter(product=p).aggregate(total=Sum("quantity"))[
+                    "total"
+                ]
+                or 0
+                for p in tea_products
+            )
+
+            category = ""
+            if i < 14:
+                category = "【お気に入り多・購入少】"
+            elif i < 17:
+                category = "【お気に入り少・購入多】"
+            else:
+                category = "【バランス型】"
+
+            self.stdout.write(
+                f"{category} {tea.name}: "
+                f"お気に入り {fav_count}件, 購入 {purchase_count}個"
+            )

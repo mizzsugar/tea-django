@@ -6,17 +6,22 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 
-def send_verification_email(user, request):
-    """確認メールを送信"""
+def send_verification_email(user, base_url: str):
+    """
+    確認メールを送信
+
+    Args:
+        user: ユーザー
+        base_url: サイトのベースURL（例: "http://example.com/"）
+    """
     # トークンを再生成
     user.email_verification_token = uuid.uuid4()
     user.email_verification_sent_at = timezone.now()
     user.save(update_fields=["email_verification_token", "email_verification_sent_at"])
 
     # 確認URL生成
-    verification_url = request.build_absolute_uri(
-        f"/verify-email/{user.email_verification_token}/"
-    )
+    base_url = base_url.rstrip("/")
+    verification_url = f"{base_url}/verify-email/{user.email_verification_token}/"
 
     # メール本文
     subject = "メールアドレスの確認"

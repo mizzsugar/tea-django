@@ -10,3 +10,4 @@ django-storages>=1.14
 boto3>=1.41
 pillow>=12.0
 stripe>=14.0
+faker>=38.2

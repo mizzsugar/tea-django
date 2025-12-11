@@ -103,9 +103,7 @@ class OrderService:
 
     @staticmethod
     @transaction.atomic
-    def complete_payment(
-        order: Order, payment_intent_id: str
-    ) -> OrderOperationResult:
+    def complete_payment(order: Order, payment_intent_id: str) -> OrderOperationResult:
         """
         支払い完了処理
 
@@ -179,4 +177,3 @@ class OrderService:
             QuerySet[Order]: 注文一覧
         """
         return Order.objects.filter(user=user).prefetch_related("items__product__tea")
-

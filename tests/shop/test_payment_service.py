@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
 import stripe
 
 from shop.services.payment_service import PaymentService
@@ -18,10 +19,16 @@ class TestPaymentServiceBuildLineItems:
         assert len(line_items) == 3
 
         # 商品のline_itemsを確認
-        product_items = [item for item in line_items if "送料" not in item["price_data"]["product_data"]["name"]]
+        product_items = [
+            item
+            for item in line_items
+            if "送料" not in item["price_data"]["product_data"]["name"]
+        ]
         assert len(product_items) == 2
 
-    def test_includes_shipping_fee_when_present(self, cart_with_items, order_with_items):
+    def test_includes_shipping_fee_when_present(
+        self, cart_with_items, order_with_items
+    ):
         """送料がある場合はline_itemsに含める"""
         cart_items = cart_with_items.items.select_related("product__tea").all()
         order_with_items.shipping_fee = 800
@@ -136,6 +143,7 @@ class TestPaymentServiceVerifySessionPayment:
         assert payment_intent_id is None
 
 
+@pytest.mark.django_db
 class TestPaymentServiceProcessWebhook:
     """PaymentService.process_webhook のテスト"""
 
@@ -399,4 +407,3 @@ class TestPaymentServiceCreateCheckoutSessionEdgeCases:
         assert call_kwargs["cancel_url"] == "https://example.com/cancel"
         assert call_kwargs["customer_email"] == "customer@example.com"
         assert call_kwargs["metadata"]["order_id"] == order_with_items.id
-

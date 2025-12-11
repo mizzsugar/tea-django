@@ -156,4 +156,3 @@ class CartService:
                 errors.append(f"{item.product}の在庫が不足しています")
 
         return len(errors) == 0, errors
-

@@ -157,7 +157,9 @@ class TestRegistrationServiceVerifyEmail:
     def test_returns_expired_for_old_token(self, unverified_user):
         """期限切れトークンにはエラーを返す"""
         # トークンを期限切れにする
-        unverified_user.email_verification_sent_at = timezone.now() - timedelta(hours=25)
+        unverified_user.email_verification_sent_at = timezone.now() - timedelta(
+            hours=25
+        )
         unverified_user.save()
 
         token = str(unverified_user.email_verification_token)
@@ -172,7 +174,9 @@ class TestRegistrationServiceResendVerificationEmail:
     """RegistrationService.resend_verification_email のテスト"""
 
     @patch("authentication.services.registration_service.send_verification_email")
-    def test_resends_email_successfully(self, mock_send_email, unverified_user, base_url):
+    def test_resends_email_successfully(
+        self, mock_send_email, unverified_user, base_url
+    ):
         """確認メールを正常に再送信できる"""
         result = RegistrationService.resend_verification_email(
             "unverified@example.com", base_url

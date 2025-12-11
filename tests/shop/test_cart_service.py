@@ -175,7 +175,9 @@ class TestCartServiceAddToCartEdgeCases:
 
     def test_add_exact_stock_amount(self, user, product_100g):
         """在庫数ぴったりまで追加できる"""
-        result = CartService.add_to_cart(user, product_100g, quantity=product_100g.stock)
+        result = CartService.add_to_cart(
+            user, product_100g, quantity=product_100g.stock
+        )
 
         assert result.success is True
         assert result.cart_item.quantity == product_100g.stock
@@ -195,7 +197,9 @@ class TestCartServiceUpdateCartItemEdgeCases:
         """在庫数ぴったりに更新できる"""
         cart_item = CartItem.objects.create(cart=cart, product=product_100g, quantity=1)
 
-        result = CartService.update_cart_item_quantity(cart_item, quantity=product_100g.stock)
+        result = CartService.update_cart_item_quantity(
+            cart_item, quantity=product_100g.stock
+        )
 
         assert result.success is True
         cart_item.refresh_from_db()
@@ -203,7 +207,9 @@ class TestCartServiceUpdateCartItemEdgeCases:
 
     def test_updates_to_smaller_quantity(self, cart, product_100g):
         """数量を減らすことができる"""
-        cart_item = CartItem.objects.create(cart=cart, product=product_100g, quantity=10)
+        cart_item = CartItem.objects.create(
+            cart=cart, product=product_100g, quantity=10
+        )
 
         result = CartService.update_cart_item_quantity(cart_item, quantity=3)
 

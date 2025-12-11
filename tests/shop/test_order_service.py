@@ -303,4 +303,3 @@ class TestOrderServiceCompletePaymentEdgeCases:
         assert result.success is True
         order_with_items.refresh_from_db()
         assert order_with_items.stripe_payment_intent_id == "pi_unique_test_id"
-

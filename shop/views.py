@@ -34,9 +34,7 @@ def add_to_cart(request, product_id):
                         "message": result.message,
                     }
                 )
-            return JsonResponse(
-                {"success": False, "error": result.message}, status=400
-            )
+            return JsonResponse({"success": False, "error": result.message}, status=400)
 
         if result.success:
             messages.success(request, result.message)
@@ -237,7 +235,7 @@ def payment_cancel(request):
     order_id = request.GET.get("order_id")
     order = get_object_or_404(Order, id=order_id, user=request.user)
 
-    result = OrderService.cancel_order(order)
+    OrderService.cancel_order(order)
     messages.warning(request, "お支払いがキャンセルされました")
     return redirect("shop:cart")
 

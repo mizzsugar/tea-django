@@ -344,7 +344,6 @@ TEA_PREFERENCE_QUESTIONS = [
 ]
 
 
-@login_required
 def tea_preference_quiz(request):
     """お茶の好み診断ページ"""
     return render(
@@ -354,7 +353,6 @@ def tea_preference_quiz(request):
     )
 
 
-@login_required
 @require_POST
 def tea_preference_result(request):
     """お茶の好み診断結果を計算して保存"""
@@ -373,8 +371,9 @@ def tea_preference_result(request):
     preference = max(scores, key=scores.get)
 
     # ユーザーのtea_preferenceを更新
-    request.user.tea_preference = preference
-    request.user.save(update_fields=["tea_preference"])
+    if request.user.is_authenticated:
+        request.user.tea_preference = preference
+        request.user.save(update_fields=["tea_preference"])
 
     # 診断結果の詳細情報
     preference_details = {

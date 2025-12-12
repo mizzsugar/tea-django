@@ -211,12 +211,12 @@ class Command(BaseCommand):
 
         created = 0
 
-        # 5週間の期間設定（2025年11月12日〜2025年12月16日）
+        # 5週間の期間設定（2025年11月10日〜2025年12月12日）
         end_date = timezone.datetime(
-            2025, 12, 16, 23, 59, 59, tzinfo=timezone.get_current_timezone()
+            2025, 12, 12, 23, 59, 59, tzinfo=timezone.get_current_timezone()
         )
         start_date = timezone.datetime(
-            2025, 11, 12, 0, 0, 0, tzinfo=timezone.get_current_timezone()
+            2025, 11, 10, 0, 0, 0, tzinfo=timezone.get_current_timezone()
         )
 
         for user in users:
@@ -329,12 +329,12 @@ class Command(BaseCommand):
         fake,
     ):
         """戦略的に注文を作成"""
-        # 5週間の期間設定（2025年11月12日〜2025年12月16日）
+        # 5週間の期間設定（2025年11月10日〜2025年12月12日）
         end_date = timezone.datetime(
-            2025, 12, 16, 23, 59, 59, tzinfo=timezone.get_current_timezone()
+            2025, 12, 12, 23, 59, 59, tzinfo=timezone.get_current_timezone()
         )
         start_date = timezone.datetime(
-            2025, 11, 12, 0, 0, 0, tzinfo=timezone.get_current_timezone()
+            2025, 11, 10, 0, 0, 0, tzinfo=timezone.get_current_timezone()
         )
         total_seconds = int((end_date - start_date).total_seconds())
 

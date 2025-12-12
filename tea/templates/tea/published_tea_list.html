@@ -3,6 +3,35 @@
 {% block content %}
 <div class="container">
 <h1 class="mt-5">お茶一覧</h1>
+
+<!-- 蒸し度フィルター -->
+<div class="mb-4">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="text-muted me-2"><i class="bi bi-funnel"></i> 蒸し度:</span>
+        <a href="{% url 'published_tea_list' %}" 
+           class="btn btn-sm {% if not steam_type %}btn-success{% else %}btn-outline-success{% endif %}">
+            すべて
+        </a>
+        {% for value, label in steam_type_choices %}
+        <a href="{% url 'published_tea_list' %}?steam_type={{ value }}" 
+           class="btn btn-sm {% if steam_type == value %}btn-success{% else %}btn-outline-success{% endif %}">
+            {{ label }}
+        </a>
+        {% endfor %}
+    </div>
+    {% if steam_type %}
+    <div class="mt-3">
+        <div class="alert alert-success d-flex align-items-center py-2" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            <span>「{{ steam_type_display }}」のお茶を表示中</span>
+            <a href="{% url 'published_tea_list' %}" class="btn btn-sm btn-outline-success ms-auto">
+                <i class="bi bi-x-lg"></i> フィルター解除
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
 <div class="row">
     {% for tea in teas %}
 <div class="col-md-4">

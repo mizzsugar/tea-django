@@ -25,6 +25,12 @@ def published_tea_list(request):
         .annotate(favorites_count=Count("favorited_by", distinct=True))
     )
 
+    # 蒸し度でフィルタリング
+    steam_type = request.GET.get("steam_type")
+    valid_steam_types = ["light", "middle", "deep"]
+    if steam_type and steam_type in valid_steam_types:
+        teas = teas.filter(steam_type=steam_type)
+
     if request.user.is_authenticated:
         user_favorite = FavoriteTea.objects.filter(
             user=request.user, tea=OuterRef("pk")
@@ -33,7 +39,20 @@ def published_tea_list(request):
     else:
         teas = teas.annotate(is_favorited=Value(False, output_field=BooleanField()))
 
-    return render(request, "tea/published_tea_list.html", {"teas": teas})
+    # 蒸し度の選択肢
+    steam_type_choices = Tea.STEAM_TYPE_CHOICES
+    steam_type_display = dict(Tea.STEAM_TYPE_CHOICES).get(steam_type, "")
+
+    return render(
+        request,
+        "tea/published_tea_list.html",
+        {
+            "teas": teas,
+            "steam_type": steam_type,
+            "steam_type_choices": steam_type_choices,
+            "steam_type_display": steam_type_display,
+        },
+    )
 
 
 @require_GET

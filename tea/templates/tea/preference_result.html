@@ -81,7 +81,7 @@
 
             <!-- アクションボタン -->
             <div class="d-grid gap-3 mb-4">
-                <a href="{% url 'published_tea_list' %}" class="btn btn-success btn-lg">
+                <a href="{% url 'published_tea_list' %}?steam_type={{ preference }}" class="btn btn-success btn-lg">
                     <i class="bi bi-cup-hot me-2"></i>おすすめのお茶を見る
                 </a>
                 <a href="{% url 'tea_preference_quiz' %}" class="btn btn-outline-success btn-lg">

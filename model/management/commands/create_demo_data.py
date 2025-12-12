@@ -39,16 +39,12 @@ class Command(BaseCommand):
 
         # お茶を3つのグループに分ける
         # グループ1: お気に入り多い・購入少ない (14種 = 70%)
-        # グループ2: お気に入り少ない・購入多い (3種 = 15%)
-        # グループ3: バランス型 (3種 = 15%)
+        # グループ2: バランス型 (3種 = 30%)
         high_fav_low_purchase = teas[:14]
-        low_fav_high_purchase = teas[14:17]
-        balanced = teas[17:]
+        balanced = teas[14:]
 
         self.stdout.write("お気に入り作成中...")
-        self._create_favorites_strategic(
-            users, high_fav_low_purchase, low_fav_high_purchase, balanced
-        )
+        self._create_favorites_strategic(users, high_fav_low_purchase, balanced)
 
         self.stdout.write("レビュー作成中...")
         self._create_reviews(100, users, teas, fake)
@@ -60,7 +56,6 @@ class Command(BaseCommand):
             users,
             products,
             high_fav_low_purchase,
-            low_fav_high_purchase,
             balanced,
             fake,
         )
@@ -204,9 +199,7 @@ class Command(BaseCommand):
                 products.append(product)
         return products
 
-    def _create_favorites_strategic(
-        self, users, high_fav_teas, low_fav_teas, balanced_teas
-    ):
+    def _create_favorites_strategic(self, users, high_fav_teas, balanced_teas):
         """戦略的にお気に入りを作成"""
 
         created = 0
@@ -227,10 +220,6 @@ class Command(BaseCommand):
             favorites.extend(
                 random.sample(high_fav_teas, min(num_high_fav, len(high_fav_teas)))
             )
-
-            # グループ2（お気に入り少ない）: 各ユーザーが0-1個選ぶ
-            if random.random() < 0.3:  # 30%の確率で1個
-                favorites.extend(random.sample(low_fav_teas, 1))
 
             # グループ3（バランス型）: 各ユーザーが0-2個選ぶ
             num_balanced = random.randint(0, 2)
@@ -324,7 +313,6 @@ class Command(BaseCommand):
         users,
         products,
         high_fav_teas,
-        low_fav_teas,
         balanced_teas,
         fake,
     ):
@@ -340,7 +328,6 @@ class Command(BaseCommand):
 
         # 商品をグループごとに分類
         high_fav_products = [p for p in products if p.tea in high_fav_teas]
-        low_fav_products = [p for p in products if p.tea in low_fav_teas]
         balanced_products = [p for p in products if p.tea in balanced_teas]
 
         for i in range(order_count):
@@ -384,8 +371,6 @@ class Command(BaseCommand):
                 rand = random.random()
                 if rand < 0.20 and high_fav_products:
                     product = random.choice(high_fav_products)
-                elif rand < 0.80 and low_fav_products:
-                    product = random.choice(low_fav_products)
                 else:
                     product = (
                         random.choice(balanced_products)

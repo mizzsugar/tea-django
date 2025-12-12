@@ -3,7 +3,6 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
-from django.db.models import Sum
 from django.utils import timezone
 from faker import Faker
 
@@ -205,159 +204,181 @@ class Command(BaseCommand):
                 products.append(product)
         return products
 
-    def _create_favorites_strategic(self, users, high_fav_teas, low_fav_teas, balanced_teas):
+    def _create_favorites_strategic(
+        self, users, high_fav_teas, low_fav_teas, balanced_teas
+    ):
         """戦略的にお気に入りを作成"""
-        
+
         created = 0
-        
+
         # 5週間の期間設定（2025年11月12日〜2025年12月16日）
-        end_date = timezone.datetime(2025, 12, 16, 23, 59, 59, tzinfo=timezone.get_current_timezone())
-        start_date = timezone.datetime(2025, 11, 12, 0, 0, 0, tzinfo=timezone.get_current_timezone())
-        
+        end_date = timezone.datetime(
+            2025, 12, 16, 23, 59, 59, tzinfo=timezone.get_current_timezone()
+        )
+        start_date = timezone.datetime(
+            2025, 11, 12, 0, 0, 0, tzinfo=timezone.get_current_timezone()
+        )
+
         for user in users:
             favorites = []
-            
+
             # グループ1（お気に入り多い）: 各ユーザーが3-7個選ぶ
             num_high_fav = random.randint(3, 7)
-            favorites.extend(random.sample(high_fav_teas, 
-                                        min(num_high_fav, len(high_fav_teas))))
-            
+            favorites.extend(
+                random.sample(high_fav_teas, min(num_high_fav, len(high_fav_teas)))
+            )
+
             # グループ2（お気に入り少ない）: 各ユーザーが0-1個選ぶ
             if random.random() < 0.3:  # 30%の確率で1個
                 favorites.extend(random.sample(low_fav_teas, 1))
-            
+
             # グループ3（バランス型）: 各ユーザーが0-2個選ぶ
             num_balanced = random.randint(0, 2)
             if num_balanced > 0:
-                favorites.extend(random.sample(balanced_teas, 
-                                            min(num_balanced, len(balanced_teas))))
-            
+                favorites.extend(
+                    random.sample(balanced_teas, min(num_balanced, len(balanced_teas)))
+                )
+
             # お気に入り登録（created_atをランダムに分散）
             for tea in favorites:
                 fav = FavoriteTea.objects.create(user=user, tea=tea)
-                
+
                 # 5週間の間でランダムな日時を生成
                 total_seconds = int((end_date - start_date).total_seconds())
                 random_seconds = random.randint(0, total_seconds)
                 random_datetime = start_date + timedelta(seconds=random_seconds)
-                
+
                 # created_atを更新
                 FavoriteTea.objects.filter(pk=fav.pk).update(created_at=random_datetime)
                 created += 1
-        
-        self.stdout.write(f'  {created}件のお気に入りを作成（2025/11/12-12/16に分散）')
 
+        self.stdout.write(f"  {created}件のお気に入りを作成（2025/11/12-12/16に分散）")
 
     def _create_reviews(self, count, users, teas, fake):
         """レビューを作成"""
         # リアルなレビュー文
         review_texts = [
-            '香りが良く、とても美味しかったです。リピート確定です！',
-            '渋みが少なく飲みやすい。毎日飲んでいます。',
-            '上品な味わいで、来客時にも出せる品質です。',
-            '深い味わいで満足。価格も手頃で助かります。',
-            '爽やかな香りが最高。朝の一杯に最適です。',
-            'まろやかで飲みやすく、家族全員が気に入っています。',
-            '期待以上の品質でした。また購入したいです。',
-            '濃厚な旨味があり、お茶好きにはたまりません。',
-            'すっきりした後味で、食事にも合います。',
-            '丁寧に作られているのが分かる味。大満足です。',
-            '香りが良く、リラックスできます。おすすめです。',
-            'コスパ最高！この価格でこの品質は嬉しい。',
-            '初めて購入しましたが、とても気に入りました。',
-            '友人へのギフトにも使いました。喜ばれました。',
-            '毎日飲んでも飽きない美味しさです。',
-            '色も綺麗で、見た目も楽しめます。',
-            '程よい渋みと甘みのバランスが絶妙です。',
-            'お茶本来の味が楽しめて満足しています。',
-            '包装も丁寧で、ギフトにぴったりでした。',
-            'リピーターです。いつも美味しくいただいています。',
+            "香りが良く、とても美味しかったです。リピート確定です！",
+            "渋みが少なく飲みやすい。毎日飲んでいます。",
+            "上品な味わいで、来客時にも出せる品質です。",
+            "深い味わいで満足。価格も手頃で助かります。",
+            "爽やかな香りが最高。朝の一杯に最適です。",
+            "まろやかで飲みやすく、家族全員が気に入っています。",
+            "期待以上の品質でした。また購入したいです。",
+            "濃厚な旨味があり、お茶好きにはたまりません。",
+            "すっきりした後味で、食事にも合います。",
+            "丁寧に作られているのが分かる味。大満足です。",
+            "香りが良く、リラックスできます。おすすめです。",
+            "コスパ最高！この価格でこの品質は嬉しい。",
+            "初めて購入しましたが、とても気に入りました。",
+            "友人へのギフトにも使いました。喜ばれました。",
+            "毎日飲んでも飽きない美味しさです。",
+            "色も綺麗で、見た目も楽しめます。",
+            "程よい渋みと甘みのバランスが絶妙です。",
+            "お茶本来の味が楽しめて満足しています。",
+            "包装も丁寧で、ギフトにぴったりでした。",
+            "リピーターです。いつも美味しくいただいています。",
         ]
-        
+
         # 5週間の期間設定
-        end_date = timezone.datetime(2025, 12, 16, 23, 59, 59, tzinfo=timezone.get_current_timezone())
-        start_date = timezone.datetime(2025, 11, 12, 0, 0, 0, tzinfo=timezone.get_current_timezone())
-        
+        end_date = timezone.datetime(
+            2025, 12, 16, 23, 59, 59, tzinfo=timezone.get_current_timezone()
+        )
+        start_date = timezone.datetime(
+            2025, 11, 12, 0, 0, 0, tzinfo=timezone.get_current_timezone()
+        )
+
         created = 0
         max_attempts = count * 3
         attempts = 0
-        
+
         while created < count and attempts < max_attempts:
             user = random.choice(users)
             tea = random.choice(teas)
             attempts += 1
-            
+
             if TeaReview.objects.filter(user=user, tea=tea).exists():
                 continue
-            
+
             review = TeaReview.objects.create(
                 user=user,
                 tea=tea,
                 rating=random.choices([3, 4, 5], weights=[15, 35, 50])[0],
-                content=random.choice(review_texts) if random.random() > 0.2 else ''
+                content=random.choice(review_texts) if random.random() > 0.2 else "",
             )
-            
+
             # created_atをランダムに分散
             total_seconds = int((end_date - start_date).total_seconds())
             random_seconds = random.randint(0, total_seconds)
             random_datetime = start_date + timedelta(seconds=random_seconds)
-            
+
             TeaReview.objects.filter(pk=review.pk).update(created_at=random_datetime)
             created += 1
-        
-        self.stdout.write(f'  {created}件のレビューを作成（2025/11/12-12/16に分散）')
 
+        self.stdout.write(f"  {created}件のレビューを作成（2025/11/12-12/16に分散）")
 
-    def _create_orders_strategic(self, order_count, total_items, users, products,
-                                high_fav_teas, low_fav_teas, balanced_teas, fake):
+    def _create_orders_strategic(
+        self,
+        order_count,
+        total_items,
+        users,
+        products,
+        high_fav_teas,
+        low_fav_teas,
+        balanced_teas,
+        fake,
+    ):
         """戦略的に注文を作成"""
         # 5週間の期間設定（2025年11月12日〜2025年12月16日）
-        end_date = timezone.datetime(2025, 12, 16, 23, 59, 59, tzinfo=timezone.get_current_timezone())
-        start_date = timezone.datetime(2025, 11, 12, 0, 0, 0, tzinfo=timezone.get_current_timezone())
+        end_date = timezone.datetime(
+            2025, 12, 16, 23, 59, 59, tzinfo=timezone.get_current_timezone()
+        )
+        start_date = timezone.datetime(
+            2025, 11, 12, 0, 0, 0, tzinfo=timezone.get_current_timezone()
+        )
         total_seconds = int((end_date - start_date).total_seconds())
-        
+
         # 商品をグループごとに分類
         high_fav_products = [p for p in products if p.tea in high_fav_teas]
         low_fav_products = [p for p in products if p.tea in low_fav_teas]
         balanced_products = [p for p in products if p.tea in balanced_teas]
-        
+
         for i in range(order_count):
             # 5週間の間でランダムな日時を生成
             random_seconds = random.randint(0, total_seconds)
             order_date = start_date + timedelta(seconds=random_seconds)
-            
+
             user = random.choice(users)
-            order_number = f'ORD{order_date.strftime("%Y%m%d%H%M%S")}{i:04d}'
-            
+            order_number = f"ORD{order_date.strftime('%Y%m%d%H%M%S')}{i:04d}"
+
             order = Order.objects.create(
                 user=user,
                 order_number=order_number,
-                status=random.choice(['paid', 'processing', 'shipped', 'delivered']),
-                shipping_name=f'ユーザー{random.randint(1, 100)}',
-                shipping_postal_code=f'{random.randint(100, 999)}-{random.randint(1000, 9999)}',
-                shipping_address=f'東京都渋谷区{random.randint(1, 100)}番地',
-                shipping_phone=f'090-{random.randint(1000, 9999)}-{random.randint(1000, 9999)}',
+                status=random.choice(["paid", "processing", "shipped", "delivered"]),
+                shipping_name=f"ユーザー{random.randint(1, 100)}",
+                shipping_postal_code=f"{random.randint(100, 999)}-{random.randint(1000, 9999)}",
+                shipping_address=f"東京都渋谷区{random.randint(1, 100)}番地",
+                shipping_phone=f"090-{random.randint(1000, 9999)}-{random.randint(1000, 9999)}",
                 subtotal=0,
                 tax_amount=0,
                 shipping_fee=0,
                 total_amount=0,
-                tax_rate=Decimal('10.00')
+                tax_rate=Decimal("10.00"),
             )
-            
+
             # created_atとupdated_atを設定
             Order.objects.filter(pk=order.pk).update(
-                created_at=order_date,
-                updated_at=order_date
+                created_at=order_date, updated_at=order_date
             )
-        
+
         # 注文明細を戦略的に作成
         orders = list(Order.objects.all())
         items_per_order = total_items // order_count
-        
+
         for order in orders:
             num_items = random.randint(1, min(5, items_per_order))
             selected_products = []
-            
+
             # 商品選択の重み付け
             for _ in range(num_items):
                 rand = random.random()
@@ -366,20 +387,24 @@ class Command(BaseCommand):
                 elif rand < 0.80 and low_fav_products:
                     product = random.choice(low_fav_products)
                 else:
-                    product = random.choice(balanced_products) if balanced_products else random.choice(products)
-                
+                    product = (
+                        random.choice(balanced_products)
+                        if balanced_products
+                        else random.choice(products)
+                    )
+
                 if product not in selected_products:
                     selected_products.append(product)
-            
+
             for product in selected_products:
                 OrderItem.objects.create(
                     order=order,
                     product=product,
                     quantity=random.randint(1, 3),
-                    price=product.price
+                    price=product.price,
                 )
-            
+
             order.calculate_amounts()
             order.save()
-        
-        self.stdout.write(f'  {order_count}件の注文を作成（2025/11/12-12/16に分散）')
+
+        self.stdout.write(f"  {order_count}件の注文を作成（2025/11/12-12/16に分散）")

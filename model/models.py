@@ -60,6 +60,12 @@ class User(AbstractUser):
 
     objects = UserManager()
 
+    TEA_PREFERENCE_CHOICES = [
+        ("light", "浅蒸し"),
+        ("middle", "中蒸し"),
+        ("deep", "深蒸し"),
+    ]
+
     username = models.CharField(
         max_length=150,
         unique=True,
@@ -90,6 +96,15 @@ class User(AbstractUser):
     )
     email_verification_sent_at = models.DateTimeField(
         null=True, blank=True, verbose_name="確認メール送信日時"
+    )
+
+    tea_preference = models.CharField(
+        max_length=20,
+        choices=TEA_PREFERENCE_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="お茶の好み",
+        help_text="診断結果によるお茶の好み（蒸し度）",
     )
 
     USERNAME_FIELD = "email"

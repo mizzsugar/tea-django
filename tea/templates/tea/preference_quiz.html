@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}お茶の好み診断 - お茶ショップ{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <!-- ヘッダー -->
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold text-success">🍵 お茶の好み診断</h1>
+                <p class="lead text-muted">8つの質問に答えて、あなたにぴったりのお茶を見つけましょう</p>
+            </div>
+
+            <!-- プログレスバー -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">進捗</span>
+                    <span class="text-muted small" id="progressText">0 / 8</span>
+                </div>
+                <div class="progress" style="height: 12px;">
+                    <div class="progress-bar bg-success" role="progressbar" id="progressBar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- 診断フォーム -->
+            <form method="post" action="{% url 'tea_preference_result' %}" id="quizForm">
+                {% csrf_token %}
+                
+                {% for question in questions %}
+                <div class="card shadow-sm mb-4 question-card" id="question-{{ question.id }}" {% if not forloop.first %}style="display: none;"{% endif %}>
+                    <div class="card-header bg-success bg-opacity-10 border-0">
+                        <span class="badge bg-success fs-6">Q{{ question.id }}</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <h5 class="card-title mb-4 fw-bold">{{ question.question }}</h5>
+                        
+                        <div class="d-grid gap-3">
+                            {% for choice in question.choices %}
+                            <div class="form-check choice-item p-0">
+                                <input class="form-check-input d-none" type="radio" 
+                                       name="q{{ question.id }}" 
+                                       id="q{{ question.id }}_{{ choice.value }}" 
+                                       value="{{ choice.value }}" required>
+                                <label class="form-check-label w-100" for="q{{ question.id }}_{{ choice.value }}">
+                                    <div class="choice-box border rounded-3 p-3 d-flex align-items-center">
+                                        <span class="choice-marker rounded-circle border border-2 me-3 flex-shrink-0"></span>
+                                        <span class="choice-text">{{ choice.text }}</span>
+                                    </div>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- ナビゲーションボタン -->
+                <div class="d-flex justify-content-between gap-3">
+                    <button type="button" class="btn btn-outline-secondary btn-lg px-4" id="prevBtn" style="display: none;">
+                        <i class="bi bi-arrow-left me-2"></i>前へ
+                    </button>
+                    <button type="button" class="btn btn-success btn-lg px-4 ms-auto" id="nextBtn">
+                        次へ<i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                    <button type="submit" class="btn btn-warning btn-lg px-4 ms-auto text-white" id="submitBtn" style="display: none;">
+                        <i class="bi bi-cup-hot me-2"></i>診断する
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.choice-box {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.choice-box:hover {
+    border-color: #198754 !important;
+    background: rgba(25, 135, 84, 0.05);
+    transform: translateX(5px);
+}
+
+.form-check-input:checked + .form-check-label .choice-box {
+    border-color: #198754 !important;
+    background: rgba(25, 135, 84, 0.1);
+    box-shadow: 0 0 0 2px rgba(25, 135, 84, 0.25);
+}
+
+.choice-marker {
+    width: 24px;
+    height: 24px;
+    border-color: #dee2e6 !important;
+    transition: all 0.2s ease;
+}
+
+.form-check-input:checked + .form-check-label .choice-marker {
+    background: #198754;
+    border-color: #198754 !important;
+    position: relative;
+}
+
+.form-check-input:checked + .form-check-label .choice-marker::after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.question-card {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107, #ffca2c);
+    border: none;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #e0a800, #ffc107);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const totalQuestions = {{ questions|length }};
+    let currentQuestion = 1;
+    
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    function updateProgress() {
+        const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+        const percentage = (answered / totalQuestions) * 100;
+        progressBar.style.width = percentage + '%';
+        progressText.textContent = answered + ' / ' + totalQuestions;
+    }
+    
+    function showQuestion(num) {
+        document.querySelectorAll('.question-card').forEach(card => {
+            card.style.display = 'none';
+        });
+        
+        const targetQuestion = document.getElementById('question-' + num);
+        if (targetQuestion) {
+            targetQuestion.style.display = 'block';
+            targetQuestion.style.animation = 'none';
+            targetQuestion.offsetHeight;
+            targetQuestion.style.animation = 'fadeIn 0.4s ease';
+        }
+        
+        prevBtn.style.display = num > 1 ? 'inline-block' : 'none';
+        
+        if (num === totalQuestions) {
+            nextBtn.style.display = 'none';
+            submitBtn.style.display = 'inline-block';
+        } else {
+            nextBtn.style.display = 'inline-block';
+            submitBtn.style.display = 'none';
+        }
+    }
+    
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', updateProgress);
+    });
+    
+    nextBtn.addEventListener('click', function() {
+        const currentRadio = document.querySelector(`input[name="q${currentQuestion}"]:checked`);
+        if (!currentRadio) {
+            alert('選択肢を選んでください');
+            return;
+        }
+        
+        if (currentQuestion < totalQuestions) {
+            currentQuestion++;
+            showQuestion(currentQuestion);
+        }
+    });
+    
+    prevBtn.addEventListener('click', function() {
+        if (currentQuestion > 1) {
+            currentQuestion--;
+            showQuestion(currentQuestion);
+        }
+    });
+    
+    document.getElementById('quizForm').addEventListener('submit', function(e) {
+        const allAnswered = document.querySelectorAll('input[type="radio"]:checked').length === totalQuestions;
+        if (!allAnswered) {
+            e.preventDefault();
+            alert('全ての質問に回答してください');
+        }
+    });
+    
+    updateProgress();
+});
+</script>
+{% endblock %}

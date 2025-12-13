@@ -13,6 +13,7 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-success">
             <div class="container">
                 <a class="navbar-brand" href="{% url 'published_tea_list' %}">お茶ショップ</a>
+                <span class="navbar-text me-3"><a href="{% url 'tea_preference_quiz' %}"><i class="bi bi-clipboard-heart me-1"></i>好み診断</a></span>
                 <div class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                         <span class="navbar-text me-3"><a href="{% url 'shop:order_list' %}">注文履歴</a></span>

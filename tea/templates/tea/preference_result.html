@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}診断結果 - お茶の好み診断{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <!-- ヘッダー -->
+            <div class="text-center mb-4">
+                <div class="mb-3">
+                    <span class="leaf-icon">🍃</span>
+                    <span class="leaf-icon">🍃</span>
+                    <span class="leaf-icon">🍃</span>
+                </div>
+                <h1 class="display-6 fw-bold text-success">診断結果</h1>
+            </div>
+
+            <!-- 結果カード -->
+            <div class="card shadow border-0 mb-4 result-card">
+                <!-- バッジ -->
+                <div class="text-center" style="margin-top: -40px;">
+                    <div class="result-badge d-inline-flex align-items-center justify-content-center rounded-circle bg-success">
+                        <span style="font-size: 2.5rem;">🍵</span>
+                    </div>
+                </div>
+
+                <div class="card-body text-center pt-3 pb-4 px-4">
+                    <!-- 結果タイプ -->
+                    <h2 class="display-4 fw-bold text-success mb-3">{{ preference_detail.name }}</h2>
+                    
+                    <!-- 説明 -->
+                    <div class="bg-light rounded-3 p-4 mb-4">
+                        <p class="mb-0 fs-5 lh-lg text-secondary">{{ preference_detail.description }}</p>
+                    </div>
+
+                    <!-- スコアセクション -->
+                    <div class="card bg-white border mb-0">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3 fw-bold">
+                                <i class="bi bi-bar-chart-fill me-2"></i>あなたの傾向
+                            </h6>
+                            
+                            <!-- 浅蒸し -->
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="score-label text-end me-3">浅蒸し</span>
+                                <div class="progress flex-grow-1" style="height: 20px;">
+                                    <div class="progress-bar score-light" role="progressbar" 
+                                         style="width: {% widthratio scores.light 24 100 %}%;">
+                                    </div>
+                                </div>
+                                <span class="score-value ms-3 fw-bold">{{ scores.light }}pt</span>
+                            </div>
+                            
+                            <!-- 中蒸し -->
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="score-label text-end me-3">中蒸し</span>
+                                <div class="progress flex-grow-1" style="height: 20px;">
+                                    <div class="progress-bar score-middle" role="progressbar" 
+                                         style="width: {% widthratio scores.middle 24 100 %}%;">
+                                    </div>
+                                </div>
+                                <span class="score-value ms-3 fw-bold">{{ scores.middle }}pt</span>
+                            </div>
+                            
+                            <!-- 深蒸し -->
+                            <div class="d-flex align-items-center">
+                                <span class="score-label text-end me-3">深蒸し</span>
+                                <div class="progress flex-grow-1" style="height: 20px;">
+                                    <div class="progress-bar score-deep" role="progressbar" 
+                                         style="width: {% widthratio scores.deep 24 100 %}%;">
+                                    </div>
+                                </div>
+                                <span class="score-value ms-3 fw-bold">{{ scores.deep }}pt</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- アクションボタン -->
+            <div class="d-grid gap-3 mb-4">
+                <a href="{% url 'published_tea_list' %}?steam_type={{ preference }}" class="btn btn-success btn-lg">
+                    <i class="bi bi-cup-hot me-2"></i>おすすめのお茶を見る
+                </a>
+                <a href="{% url 'tea_preference_quiz' %}" class="btn btn-outline-success btn-lg">
+                    <i class="bi bi-arrow-repeat me-2"></i>もう一度診断する
+                </a>
+            </div>
+
+            <!-- シェアセクション -->
+            <div class="text-center">
+                <p class="text-muted small mb-2">結果をシェア</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="https://twitter.com/intent/tweet?text=私のお茶の好みは「{{ preference_detail.name }}」でした！🍵&url=" 
+                       target="_blank" class="btn btn-dark rounded-circle share-btn">
+                        <i class="bi bi-twitter-x"></i>
+                    </a>
+                    <a href="https://line.me/R/msg/text/?私のお茶の好みは「{{ preference_detail.name }}」でした！🍵" 
+                       target="_blank" class="btn btn-success rounded-circle share-btn" style="background: #06C755; border-color: #06C755;">
+                        <i class="bi bi-line"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.leaf-icon {
+    display: inline-block;
+    font-size: 1.5rem;
+    animation: float 2s ease-in-out infinite;
+}
+
+.leaf-icon:nth-child(1) { animation-delay: 0s; }
+.leaf-icon:nth-child(2) { animation-delay: 0.3s; }
+.leaf-icon:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-8px) rotate(10deg); }
+}
+
+.result-card {
+    border-radius: 1.5rem;
+    overflow: visible;
+    animation: slideUp 0.6s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.result-badge {
+    width: 80px;
+    height: 80px;
+    box-shadow: 0 4px 15px rgba(25, 135, 84, 0.3);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.score-label {
+    width: 60px;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.score-value {
+    width: 50px;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.score-light {
+    background: linear-gradient(90deg, #90EE90, #7CCD7C);
+}
+
+.score-middle {
+    background: linear-gradient(90deg, #3CB371, #2E8B57);
+}
+
+.score-deep {
+    background: linear-gradient(90deg, #228B22, #006400);
+}
+
+.share-btn {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+}
+
+.share-btn:hover {
+    transform: scale(1.1);
+}
+
+.progress {
+    border-radius: 10px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+</style>
+{% endblock %}

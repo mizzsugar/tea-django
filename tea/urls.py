@@ -14,4 +14,9 @@ urlpatterns = [
         name="cancel_favorite_tea",
     ),
     path("teas/<int:tea_id>/review/", views.add_review, name="add_review"),
+    # お茶の好み診断
+    path("preference/", views.tea_preference_quiz, name="tea_preference_quiz"),
+    path(
+        "preference/result/", views.tea_preference_result, name="tea_preference_result"
+    ),
 ]

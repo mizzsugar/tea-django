@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.forms import UserChangeForm
 
 from model.models import (
     Cart,
@@ -21,23 +22,43 @@ admin.site.register(FavoriteTea)
 admin.site.register(TeaReview)
 
 
+class CustomUserChangeForm(UserChangeForm):
+    class Meta:
+        model = User
+        fields = "__all__"
+
+
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
+    form = CustomUserChangeForm
+
     list_display = [
         "email",
         "username",
         "nickname",
+        "tea_preference",
         "is_staff",
         "is_superuser",
         "date_joined",
     ]
-    list_filter = ["is_staff", "is_superuser", "is_active"]
+    list_filter = ["is_staff", "is_superuser", "is_active", "tea_preference"]
     search_fields = ["email", "username", "nickname"]
     ordering = ["-date_joined"]
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("個人情報", {"fields": ("username", "nickname", "first_name", "last_name")}),
+        ("お茶の好み", {"fields": ("tea_preference",)}),
+        (
+            "メール確認",
+            {
+                "fields": (
+                    "is_email_verified",
+                    "email_verification_token",
+                    "email_verification_sent_at",
+                )
+            },
+        ),
         (
             "権限",
             {
@@ -64,11 +85,18 @@ class UserAdmin(BaseUserAdmin):
                     "nickname",
                     "password1",
                     "password2",
+                    "tea_preference",
                     "is_staff",
                     "is_superuser",
                 ),
             },
         ),
+    )
+
+    readonly_fields = (
+        "last_login",
+        "date_joined",
+        "email_verification_token",
     )
 
 
